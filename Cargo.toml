@@ -1,0 +1,9 @@
+[package]
+name = "efm8load"
+version = "0.1.0"
+authors = ["Kamil Krzyżanowski <kamnxt@kamnxt.com>"]
+edition = "2018"
+
+[dependencies]
+hidapi = "0.5.2"
+clap = "2.33.0"
