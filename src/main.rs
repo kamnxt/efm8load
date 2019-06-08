@@ -9,39 +9,28 @@ const VID: u16 = 0x0000; // CHANGE ME TODO
 const PID: u16 = 0x0000; // CHANGE ME TODO
 
 fn upload_code(path: &str, api: HidApi) -> io::Result<()> {
-    let mut f = fs::File::open(path)?;
+    let f = fs::File::open(path)?;
     let mut cmds: Vec<Vec<u8>> = Vec::new();
-    //    let mut iter = f.bytes().peekable();
-    //    loop {
-    //        if let Some(Ok(0x24u8)) = iter.peek() {
-    //            println!(".");
-    //            let arr: Vec<u8> = iter.by_ref().take(2).map(|c| c.unwrap()).collect();
-    //            if let None = iter.peek() {
-    //                break;
-    //            }
-    //            cmds.push(arr);
-    //            iter.next();
-    //        } else {
-    //            eprintln!("Expected '$', found something else");
-    //            return Ok(());
-    //        }
-    //    }
-    let mut buf = Vec::new();
-    f.read_to_end(&mut buf)?;
-    let mut pos = 0;
-    while pos < buf.len() {
-        if buf[pos] != '$' as u8 {
-            eprintln!("File seems weird");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                io::Error::last_os_error(),
-            ));
+    let iter = &mut f.bytes().peekable();
+    println!("Parsing commands");
+    loop {
+        if let Some(Ok(0x24u8)) = iter.peek() {
+            print!(".");
+            let mut arr: Vec<u8> = Vec::new();
+            arr.push(iter.next().unwrap().unwrap());
+            let num_bytes = iter.next().unwrap().unwrap();
+            arr.push(num_bytes);
+            arr.extend(iter.by_ref().take(num_bytes as usize).map(|c| c.unwrap()));
+            if let None = iter.peek() {
+                break;
+            }
+            cmds.push(arr);
+        } else {
+            eprintln!("Expected '$', found something else ({:?})", iter.peek());
+            return Ok(());
         }
-        let len = buf[pos + 1] as usize;
-        let cmd = buf[pos..pos + len + 2].to_vec();
-        cmds.push(cmd);
-        pos += len + 2;
     }
+    println!("done.");
     let dev = api.open(VID, PID);
     match dev {
         Err(idk) => {
