@@ -2,20 +2,20 @@ extern crate clap;
 extern crate hidapi;
 
 use clap::{App, Arg};
-use std::fmt;
-use std::fmt::Display;
 
 use hidapi::HidApi;
 
+mod error;
 mod parser;
 mod types;
 mod uploader;
+use error::AppError;
 use parser::parse_cmds;
 use types::Config;
 use uploader::upload_cmds;
 
-const DEFAULT_VID: &str = "0x10c4";
-const DEFAULT_PID: &str = "0xeac9";
+const DEFAULT_VID: &str = "0x10c4"; //Silabs
+const DEFAULT_PID: &str = "0xeac9"; //EFM8UB1
 
 fn main() {
     let config = App::new("efm8load-rs")
@@ -44,48 +44,6 @@ fn main() {
     }
 }
 
-enum AppError {
-    ArgsError(std::num::ParseIntError),
-    ParseError(parser::ParseError),
-    HidApiError(hidapi::HidError),
-    UploadError(uploader::UploadError),
-}
-
-impl Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
-        match self {
-            AppError::ArgsError(err) => write!(f, "Invalid arguments: {}", err),
-            AppError::ParseError(err) => write!(f, "Failed to parse efm8 file: {}", err),
-            AppError::HidApiError(err) => write!(f, "Failed to open hidapi: {}", err),
-            AppError::UploadError(err) => write!(f, "Failed to upload to device: {}", err),
-        }
-    }
-}
-
-impl From<hidapi::HidError> for AppError {
-    fn from(err: hidapi::HidError) -> AppError {
-        AppError::HidApiError(err)
-    }
-}
-
-impl From<std::num::ParseIntError> for AppError {
-    fn from(err: std::num::ParseIntError) -> AppError {
-        AppError::ArgsError(err)
-    }
-}
-
-impl From<parser::ParseError> for AppError {
-    fn from(err: parser::ParseError) -> AppError {
-        AppError::ParseError(err)
-    }
-}
-
-impl From<uploader::UploadError> for AppError {
-    fn from(err: uploader::UploadError) -> AppError {
-        AppError::UploadError(err)
-    }
-}
-
 fn run(config: clap::ArgMatches) -> Result<(), AppError> {
     let config = verify_args(config)?;
     println!("Starting...");
@@ -105,5 +63,5 @@ fn verify_args(matches: clap::ArgMatches) -> Result<Config, std::num::ParseIntEr
         matches.value_of("VID").unwrap().trim_start_matches("0x"),
         16,
     )?;
-    Ok(Config { path, pid, vid })
+    Ok(Config { path, vid, pid })
 }
