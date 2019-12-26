@@ -1,5 +1,6 @@
 extern crate clap;
 extern crate hidapi;
+use std::process::exit;
 
 use clap::{App, Arg};
 
@@ -40,7 +41,10 @@ fn main() {
         .get_matches();
     match run(config) {
         Ok(()) => println!("Upload successful."),
-        Err(err) => eprintln!("Upload failed due to an error: {}", err),
+        Err(err) => {
+            eprintln!("Upload failed due to an error: {}", err);
+            exit(1);
+        }
     }
 }
 
